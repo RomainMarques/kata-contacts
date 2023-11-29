@@ -12,6 +12,7 @@ public class Database {
         String databasePath = databaseFile.getPath();
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + databasePath);
+             connection.setAutoCommit(false);
         } catch (SQLException e) {
             throw new RuntimeException("Could not create connection: " + e.toString());
         }
@@ -27,6 +28,7 @@ public class Database {
                     name TEXT NOT NULL,
                     email TEXT NOT NULL
                     )
+                    CREATE UNIQUE INDEX index_contacts_email ON contacts(email);
                     """
             );
         } catch (SQLException e) {
@@ -36,7 +38,26 @@ public class Database {
     }
 
     public void insertContacts(Stream<Contact> contacts) {
-        // TODO
+        try {
+            String query = "Insert into contacts (name, email) values(?, ?);";
+            PreparedStatement statement = connection.prepareStatement(query);
+            contacts.forEach((Contact contact) -> {
+                try {
+                    statement.setString(1, contact.name());
+                    statement.setString(2, contact.email());
+                    statement.addBatch();
+                    insertedCount++;
+                    if(insertedCount % 1000 == 0) {
+                        statement.executeBatch();
+                    }
+                    statement.executeBatch();
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (SQLException e) {
+            System.out.println(e.toString());
+        }
     }
 
     public String getContactNameFromEmail(String email) {

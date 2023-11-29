@@ -4,5 +4,5 @@ Run the application with:
 
 ```
 mvn compile
-mvn exec:java -Dexec.args=<Number of contacts>
+mvn exec:java -Dexec.args=100000000
 ```
